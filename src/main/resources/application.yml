@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: notificacao-ms
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: notificacao-ms-group
+      auto-offset-reset: earliest
+    properties:
+      spring.json.add.type.headers: false
+
+  mail:
+    host: ${MAIL_HOST:mailhog}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail.smtp.auth: false
+      mail.smtp.starttls.enable: false
+
+server:
+  port: 8084
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+fixit:
+  services:
+    cliente-veiculo: ${CLIENTE_VEICULO_URL:http://cliente-veiculo-ms:8080}
+    cobranca: ${COBRANCA_URL:http://cobranca-ms:8083}
