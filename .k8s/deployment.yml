@@ -19,6 +19,8 @@ spec:
         prometheus.io/port: "8084"
         prometheus.io/path: "/actuator/prometheus"
     spec:
+      imagePullSecrets:
+        - name: ghcr-secret
       containers:
         - name: notificacao-ms
           image: ghcr.io/arch-software-fiap/notificacao-ms:latest
@@ -33,9 +35,9 @@ spec:
             - name: MAIL_PORT
               value: "1025"
             - name: CLIENTE_VEICULO_URL
-              value: "http://cliente-veiculo-ms:8080"
+              value: "http://cliente-veiculo-ms:8080/fixit-backend"
             - name: COBRANCA_URL
-              value: "http://cobranca-ms:8083"
+              value: "http://cobranca-ms:8083/fixit-cobranca-ms"
           resources:
             requests:
               cpu: 100m

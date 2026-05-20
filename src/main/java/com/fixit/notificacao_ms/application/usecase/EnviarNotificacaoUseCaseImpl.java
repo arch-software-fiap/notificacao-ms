@@ -5,11 +5,16 @@ import com.fixit.notificacao_ms.infrastructure.client.ClienteVeiculoClient;
 import com.fixit.notificacao_ms.infrastructure.client.CobrancaClient;
 import com.fixit.notificacao_ms.infrastructure.mail.EmailSenderAdapter;
 import com.fixit.notificacao_ms.infrastructure.messaging.OsEventoMessage;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.util.Base64;
 
 @Slf4j
 @Service
@@ -82,18 +87,37 @@ public class EnviarNotificacaoUseCaseImpl implements EnviarNotificacaoUseCase {
     }
 
     private String templateQrCode(String nome, String osId, String qrCodeData, BigDecimal valor) {
+        String qrBase64 = gerarQrCodeBase64(qrCodeData);
+        String imgHtml = qrBase64 != null
+                ? "<div style=\"text-align:center;margin:16px 0\">" +
+                  "<img src=\"data:image/png;base64," + qrBase64 + "\" alt=\"QR Code PIX\" width=\"250\" height=\"250\"/>" +
+                  "</div>"
+                : "";
         return """
                 <html><body style="font-family:Arial,sans-serif;color:#333">
                 <h2 style="color:#1a73e8">Olá, %s!</h2>
                 <p>Seu pagamento PIX para a OS <strong>#%s</strong> está pronto.</p>
                 <p><strong>Valor:</strong> R$ %s</p>
                 <p>Copie o código abaixo e cole no aplicativo do seu banco:</p>
-                <div style="background:#f4f4f4;padding:12px;border-radius:6px;word-break:break-all;font-family:monospace">
+                <div style="background:#f4f4f4;padding:12px;border-radius:6px;word-break:break-all;font-family:monospace;font-size:12px">
                 %s
                 </div>
+                %s
                 <hr/><p style="font-size:12px;color:#888">FixIt — Oficina Inteligente</p>
                 </body></html>
-                """.formatted(nome, osId, valor.toPlainString(), qrCodeData);
+                """.formatted(nome, osId, valor.toPlainString(), qrCodeData, imgHtml);
+    }
+
+    private String gerarQrCodeBase64(String conteudo) {
+        try {
+            var bitMatrix = new MultiFormatWriter().encode(conteudo, BarcodeFormat.QR_CODE, 300, 300);
+            var out = new ByteArrayOutputStream();
+            MatrixToImageWriter.writeToStream(bitMatrix, "PNG", out);
+            return Base64.getEncoder().encodeToString(out.toByteArray());
+        } catch (Exception e) {
+            log.warn("Não foi possível gerar QR Code: {}", e.getMessage());
+            return null;
+        }
     }
 
     private String templateCancelada(String nome, String osId) {
