@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notificacao-ms
+  namespace: fixit
+  labels:
+    app: notificacao-ms
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notificacao-ms
+  template:
+    metadata:
+      labels:
+        app: notificacao-ms
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8084"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      containers:
+        - name: notificacao-ms
+          image: ghcr.io/arch-software-fiap/notificacao-ms:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8084
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: "kafka:9092"
+            - name: MAIL_HOST
+              value: "mailhog"
+            - name: MAIL_PORT
+              value: "1025"
+            - name: CLIENTE_VEICULO_URL
+              value: "http://cliente-veiculo-ms:8080"
+            - name: COBRANCA_URL
+              value: "http://cobranca-ms:8083"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 40
+            periodSeconds: 15
+            failureThreshold: 3
